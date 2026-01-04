@@ -28,7 +28,7 @@ export const generateStory = async (
     1. Mantén la personalidad de los personajes 100% fiel a la serie.
     2. IDIOMA DE SALIDA: ${langInstruction}
     3. La historia debe tener un título creativo en el idioma seleccionado.
-    4. Usa formato Markdown (negritas, cursivas).
+    4. FORMATO: Usa Markdown. IMPORTANTE: Separa cada párrafo y cada diálogo de personaje con DOS saltos de línea (\\n\\n). No escribas bloques de texto densos. Cada vez que un personaje hable, debe ser en una línea nueva.
     5. INSTRUCCIÓN DE LONGITUD: ${selectedLength.promptInstruction}
     6. ¡Importante! Si el género es musical, DEBES incluir la letra completa de una canción original integrada en la trama.
   `;
@@ -40,6 +40,8 @@ export const generateStory = async (
     Detalles del género: ${selectedGenre.promptModifier}
     
     ${isLongStory ? 'IMPORTANTE: Quiero una historia LARGA y PROFUNDA. Divide la historia en al menos 3 o 4 escenas separadas. Profundiza en los sentimientos.' : ''}
+    
+    Recuerda: ¡Formato de diálogo limpio! Cada intervención en un nuevo párrafo.
   `;
 
   try {

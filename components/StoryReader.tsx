@@ -8,9 +8,13 @@ interface Props {
 }
 
 export const StoryReader: React.FC<Props> = ({ title, content, onReset }) => {
-  // Pre-process content to fix literal \n characters (escaped newlines) that might come from the API JSON
-  // This ensures they are rendered as actual line breaks/paragraphs by the Markdown renderer
-  const formattedContent = content.replace(/\\n/g, '\n');
+  // Pre-process content to ensure proper formatting
+  // 1. Replace literal "\n" strings (escaped) with actual newlines
+  // 2. Ensure all single newlines become double newlines to force Markdown paragraphs
+  //    This fixes the issue where dialogues get stuck together in one block
+  const formattedContent = content
+    .replace(/\\n/g, '\n')
+    .replace(/\n/g, '\n\n');
 
   const handlePrint = () => {
     window.print();
@@ -48,7 +52,7 @@ export const StoryReader: React.FC<Props> = ({ title, content, onReset }) => {
               className="bg-gray-800 hover:bg-gray-900 text-white font-bold py-3 px-8 rounded-full shadow-lg transform transition hover:scale-105 flex items-center justify-center"
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2-2v4h10z" />
               </svg>
                Imprimir / PDF
             </button>
