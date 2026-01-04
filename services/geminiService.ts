@@ -1,4 +1,4 @@
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenAI, Type } from "@google/genai";
 import { Character, Genre, StoryLength, Language } from '../types';
 
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
@@ -40,12 +40,6 @@ export const generateStory = async (
     Detalles del género: ${selectedGenre.promptModifier}
     
     ${isLongStory ? 'IMPORTANTE: Quiero una historia LARGA y PROFUNDA. Divide la historia en al menos 3 o 4 escenas separadas. Profundiza en los sentimientos.' : ''}
-    
-    Por favor, devuelve el resultado en formato JSON con la siguiente estructura:
-    {
-      "title": "El título de la historia",
-      "content": "El contenido completo de la historia en markdown..."
-    }
   `;
 
   try {
@@ -55,10 +49,17 @@ export const generateStory = async (
       config: {
         systemInstruction: systemInstruction,
         responseMimeType: "application/json",
-        // Enable thinking for long stories to plan the narrative arc better
-        ...(isLongStory && { 
-          thinkingConfig: { thinkingBudget: 2048 },
-        })
+        // Definimos el esquema estricto para asegurar que el JSON nunca falle
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            title: { type: Type.STRING },
+            content: { type: Type.STRING }
+          },
+          required: ["title", "content"]
+        },
+        // Aumentamos los tokens de salida para evitar que la historia larga se corte a la mitad (lo que rompe el JSON)
+        maxOutputTokens: 8192,
       }
     });
 
