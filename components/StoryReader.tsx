@@ -8,6 +8,10 @@ interface Props {
 }
 
 export const StoryReader: React.FC<Props> = ({ title, content, onReset }) => {
+  // Pre-process content to fix literal \n characters (escaped newlines) that might come from the API JSON
+  // This ensures they are rendered as actual line breaks/paragraphs by the Markdown renderer
+  const formattedContent = content.replace(/\\n/g, '\n');
+
   const handlePrint = () => {
     window.print();
   };
@@ -34,7 +38,7 @@ export const StoryReader: React.FC<Props> = ({ title, content, onReset }) => {
                 em: ({node, ...props}) => <em className="text-gray-500" {...props} />,
               }}
             >
-              {content}
+              {formattedContent}
             </ReactMarkdown>
           </div>
 
