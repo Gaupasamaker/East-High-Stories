@@ -213,8 +213,10 @@ export const continueStoryStream = async (
     SI LA ELECCIÓN FUE UNA ACCIÓN: Describe esa acción y sus consecuencias inmediatas.
     SI LA ELECCIÓN FUE UN DIÁLOGO: Haz que el personaje diga eso y observa la reacción de los demás.
     
-    NO escribas un final genérico. La trama debe bifurcarse aquí. Si la elección es arriesgada, que ocurra algo arriesgado.
-    No repitas el título. Escribe directamente el contenido.
+    CRÍTICO: NO REPITAS el texto de la "CONTEXTO COMPLETO DE LA HISTORIA".
+    EMPIEZA A ESCRIBIR INMEDIATAMENTE LA CONTINUACIÓN.
+    NO escribas un final genérico. La trama debe bifurcarse aquí.
+    No repitas el título.
     Usa Markdown.
   `;
 
