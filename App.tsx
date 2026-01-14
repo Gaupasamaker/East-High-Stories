@@ -152,7 +152,10 @@ const App: React.FC = () => {
       {/* Header */}
       <header className="bg-red-700 text-white shadow-lg sticky top-0 z-50 no-print">
         <div className="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center space-x-3 cursor-pointer" onClick={() => setView('create')}>
+          <div className="flex items-center space-x-3 cursor-pointer" onClick={() => {
+            setView('create');
+            resetStory();
+          }}>
             <div className="bg-white text-red-700 font-bold rounded-full w-10 h-10 flex items-center justify-center text-xl border-2 border-yellow-400">
               W
             </div>
