@@ -1,7 +1,7 @@
-import { GoogleGenAI, Type } from "@google/genai";
+import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
 import { Character, Genre, StoryLength, Language } from '../types';
 
-const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY });
+const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY);
 
 export const generateStory = async (
   selectedCharacters: Character[],
@@ -9,14 +9,14 @@ export const generateStory = async (
   selectedLength: StoryLength,
   language: Language
 ): Promise<{ title: string; content: string }> => {
-  
+
   const charNames = selectedCharacters.map(c => c.name).join(', ');
   const isLongStory = selectedLength.id === 'long';
-  
-  // Use Pro for long stories as it handles context and detail better
-  const modelName = isLongStory ? 'gemini-1.5-pro' : 'gemini-1.5-flash';
 
-  const langInstruction = language === 'en' 
+  // Use compatible models for Google Generative AI SDK (User has access to 3.0 preview)
+  const modelName = isLongStory ? 'gemini-3-pro-preview' : 'gemini-3-flash-preview';
+
+  const langInstruction = language === 'en'
     ? "Write the story in English. Translate any Spanish context provided in the prompt to English before writing."
     : "Escribe la historia en Español neutro o de España.";
 
@@ -45,27 +45,26 @@ export const generateStory = async (
   `;
 
   try {
-    const response = await ai.models.generateContent({
+    const model = genAI.getGenerativeModel({
       model: modelName,
-      contents: prompt,
-      config: {
-        systemInstruction: systemInstruction,
+      systemInstruction: systemInstruction,
+      generationConfig: {
         responseMimeType: "application/json",
-        // Definimos el esquema estricto para asegurar que el JSON nunca falle
         responseSchema: {
-          type: Type.OBJECT,
+          type: SchemaType.OBJECT,
           properties: {
-            title: { type: Type.STRING },
-            content: { type: Type.STRING }
+            title: { type: SchemaType.STRING },
+            content: { type: SchemaType.STRING }
           },
           required: ["title", "content"]
         },
-        // Aumentamos los tokens de salida para evitar que la historia larga se corte a la mitad (lo que rompe el JSON)
         maxOutputTokens: 8192,
       }
     });
 
-    const jsonText = response.text || "{}";
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    const jsonText = response.text();
     const parsed = JSON.parse(jsonText);
 
     return {
