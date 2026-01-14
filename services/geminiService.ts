@@ -1,7 +1,7 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { Character, Genre, StoryLength, Language } from '../types';
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY });
 
 export const generateStory = async (
   selectedCharacters: Character[],
@@ -14,7 +14,7 @@ export const generateStory = async (
   const isLongStory = selectedLength.id === 'long';
   
   // Use Pro for long stories as it handles context and detail better
-  const modelName = isLongStory ? 'gemini-3-pro-preview' : 'gemini-3-flash-preview';
+  const modelName = isLongStory ? 'gemini-1.5-pro' : 'gemini-1.5-flash';
 
   const langInstruction = language === 'en' 
     ? "Write the story in English. Translate any Spanish context provided in the prompt to English before writing."
