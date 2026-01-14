@@ -13,8 +13,8 @@ const App: React.FC = () => {
   const [selectedGenreId, setSelectedGenreId] = useState<string | null>(null);
   const [selectedLengthId, setSelectedLengthId] = useState<'short' | 'long' | null>(null);
   const [selectedLanguage, setSelectedLanguage] = useState<Language>('es');
-  
-  const [generatedStory, setGeneratedStory] = useState<{title: string, content: string} | null>(null);
+
+  const [generatedStory, setGeneratedStory] = useState<{ title: string, content: string } | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [loadingMsg, setLoadingMsg] = useState(LOADING_MESSAGES[0]);
 
@@ -30,7 +30,7 @@ const App: React.FC = () => {
   }, [isLoading]);
 
   const handleCharacterToggle = (id: string) => {
-    setSelectedCharIds(prev => 
+    setSelectedCharIds(prev =>
       prev.includes(id) ? prev.filter(c => c !== id) : [...prev, id]
     );
   };
@@ -46,13 +46,16 @@ const App: React.FC = () => {
       const chars = CHARACTERS.filter(c => selectedCharIds.includes(c.id));
       const genre = GENRES.find(g => g.id === selectedGenreId);
       const length = STORY_LENGTHS.find(l => l.id === selectedLengthId);
-      
+
       if (chars && genre && length) {
         const story = await generateStory(chars, genre, length, selectedLanguage);
         setGeneratedStory(story);
       }
     } catch (error) {
-      alert("Hubo un problema contactando con los escritores de East High. ¡Inténtalo de nuevo!");
+    } catch (error: any) {
+      console.error("Story generation error:", error);
+      const errorMsg = error.message || "Error desconocido";
+      alert(`Hubo un problema contactando con los escritores de East High. ¡Inténtalo de nuevo!\n\nDetalle del error: ${errorMsg}`);
     } finally {
       setIsLoading(false);
     }
@@ -71,19 +74,19 @@ const App: React.FC = () => {
       <header className="bg-red-700 text-white shadow-lg sticky top-0 z-50 no-print">
         <div className="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center space-x-3">
-             <div className="bg-white text-red-700 font-bold rounded-full w-10 h-10 flex items-center justify-center text-xl border-2 border-yellow-400">
-               W
-             </div>
-             <div>
-               <h1 className="text-xl md:text-2xl font-bold tracking-tight">East High Stories</h1>
-               <p className="text-xs text-red-200 uppercase tracking-widest">Fan Fiction Generator</p>
-             </div>
+            <div className="bg-white text-red-700 font-bold rounded-full w-10 h-10 flex items-center justify-center text-xl border-2 border-yellow-400">
+              W
+            </div>
+            <div>
+              <h1 className="text-xl md:text-2xl font-bold tracking-tight">East High Stories</h1>
+              <p className="text-xs text-red-200 uppercase tracking-widest">Fan Fiction Generator</p>
+            </div>
           </div>
         </div>
       </header>
 
       <main className="max-w-4xl mx-auto px-4 pt-8">
-        
+
         {/* Loading State */}
         {isLoading && (
           <div className="flex flex-col items-center justify-center py-20 fade-in">
@@ -100,10 +103,10 @@ const App: React.FC = () => {
 
         {/* Story Reader */}
         {!isLoading && generatedStory && (
-          <StoryReader 
-            title={generatedStory.title} 
-            content={generatedStory.content} 
-            onReset={resetStory} 
+          <StoryReader
+            title={generatedStory.title}
+            content={generatedStory.content}
+            onReset={resetStory}
           />
         )}
 
@@ -116,23 +119,23 @@ const App: React.FC = () => {
                 <p className="text-gray-600">Elige a tus personajes favoritos y dinos qué debería pasar hoy en Salt Lake City.</p>
               </div>
 
-              <LanguageSelector 
+              <LanguageSelector
                 selectedLanguage={selectedLanguage}
                 onSelect={setSelectedLanguage}
               />
-              
+
               <div className="border-t border-gray-100 my-8"></div>
 
-              <CharacterSelector 
-                selectedIds={selectedCharIds} 
-                onToggle={handleCharacterToggle} 
+              <CharacterSelector
+                selectedIds={selectedCharIds}
+                onToggle={handleCharacterToggle}
               />
-              
+
               <div className="border-t border-gray-100 my-8"></div>
 
-              <GenreSelector 
-                selectedId={selectedGenreId} 
-                onSelect={setSelectedGenreId} 
+              <GenreSelector
+                selectedId={selectedGenreId}
+                onSelect={setSelectedGenreId}
               />
 
               <div className="border-t border-gray-100 my-8"></div>
@@ -148,20 +151,20 @@ const App: React.FC = () => {
                   disabled={!canGenerate}
                   className={`
                     w-full md:w-auto px-10 py-4 rounded-full text-lg font-bold shadow-lg transition-all transform
-                    ${canGenerate 
-                      ? 'bg-red-600 hover:bg-red-700 hover:scale-105 text-white cursor-pointer ring-4 ring-red-200' 
+                    ${canGenerate
+                      ? 'bg-red-600 hover:bg-red-700 hover:scale-105 text-white cursor-pointer ring-4 ring-red-200'
                       : 'bg-gray-200 text-gray-400 cursor-not-allowed'
                     }
                   `}
                 >
-                  {canGenerate 
-                    ? (selectedLanguage === 'en' ? '🎬 Action! Generate Story' : '🎬 ¡Acción! Generar Historia') 
+                  {canGenerate
+                    ? (selectedLanguage === 'en' ? '🎬 Action! Generate Story' : '🎬 ¡Acción! Generar Historia')
                     : (selectedLanguage === 'en' ? 'Select options to start' : 'Completa las opciones para empezar')
                   }
                 </button>
               </div>
             </div>
-            
+
             <p className="text-center text-gray-400 text-xs mt-8">
               Esta app usa IA para generar historias. Todo es ficción y hecho por fans para fans.
             </p>
