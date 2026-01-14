@@ -203,14 +203,17 @@ export const continueStoryStream = async (
 
   const prompt = `
     ${langInstruction}
-    CONTEXTO ANTERIOR DE LA HISTORIA:
-    "${previousContent.slice(-1000)}"
-    ...
+    CONTEXTO COMPLETO DE LA HISTORIA:
+    "${previousContent}"
     
     EL USUARIO ELIGIÓ: "${selectedChoice}"
     
-    TAREA:
-    Continúa la historia basándote en la elección del usuario. Escribe un final emocionante para este episodio.
+    TAREA IMPERATIVA:
+    Continúa la historia. Tu continuación DEBE ser una consecuencia directa y lógica de la elección "${selectedChoice}".
+    SI LA ELECCIÓN FUE UNA ACCIÓN: Describe esa acción y sus consecuencias inmediatas.
+    SI LA ELECCIÓN FUE UN DIÁLOGO: Haz que el personaje diga eso y observa la reacción de los demás.
+    
+    NO escribas un final genérico. La trama debe bifurcarse aquí. Si la elección es arriesgada, que ocurra algo arriesgado.
     No repitas el título. Escribe directamente el contenido.
     Usa Markdown.
   `;
