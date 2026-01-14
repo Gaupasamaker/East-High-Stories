@@ -6,7 +6,7 @@ import { LanguageSelector } from './components/LanguageSelector';
 import { StoryReader } from './components/StoryReader';
 import { StoryHistory } from './components/StoryHistory';
 import { CHARACTERS, GENRES, STORY_LENGTHS, LOADING_MESSAGES } from './constants';
-import { generateStory } from './services/geminiService';
+import { generateStory, generateStoryStream } from './services/geminiService';
 import { Language, SavedStory } from './types';
 import { useStoryStorage } from './hooks/useStoryStorage';
 
@@ -17,6 +17,7 @@ const App: React.FC = () => {
   const [selectedLanguage, setSelectedLanguage] = useState<Language>('es');
 
   const [generatedStory, setGeneratedStory] = useState<{ title: string, content: string } | null>(null);
+  const [currentChoices, setCurrentChoices] = useState<string[] | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(false);
   const [loadingMsg, setLoadingMsg] = useState(LOADING_MESSAGES[0]);
 
@@ -46,6 +47,7 @@ const App: React.FC = () => {
 
     setIsLoading(true);
     setGeneratedStory(null);
+    setCurrentChoices(undefined);
     window.scrollTo({ top: 0, behavior: 'smooth' });
 
     try {
@@ -60,7 +62,7 @@ const App: React.FC = () => {
           genre,
           length,
           selectedLanguage,
-          (chunk) => {
+          (chunk: string) => {
             setGeneratedStory(prev => {
               if (!prev) return { title: "Escribiendo...", content: chunk };
               return { ...prev, content: prev.content + chunk };
@@ -70,8 +72,9 @@ const App: React.FC = () => {
 
         // Final update to ensure title is correct
         setGeneratedStory({ title: story.title, content: story.fullContent });
+        setCurrentChoices(story.choices);
 
-        // Auto-save the story
+        // Auto-save the story (without choices for now, user can assume interaction happened)
         saveStory({
           title: story.title,
           content: story.fullContent,
@@ -90,13 +93,54 @@ const App: React.FC = () => {
     }
   };
 
+  const handleChoice = async (choice: string) => {
+    if (!generatedStory) return;
+
+    // Clear choices to prevent double click
+    setCurrentChoices(undefined);
+    setIsLoading(true);
+
+    try {
+      // Import dynamically to avoid circle dep if any (not needed here but good practice)
+      const { continueStoryStream } = await import('./services/geminiService');
+
+      // Append choice to story content visually
+      setGeneratedStory(prev => prev ? ({
+        ...prev,
+        content: prev.content + "\n\n**TÚ ELEGISTE:** _" + choice + "_\n\n"
+      }) : null);
+
+      await continueStoryStream(
+        generatedStory.content,
+        choice,
+        selectedLanguage,
+        (chunk: string) => {
+          (chunk: string) => {
+            setGeneratedStory(prev => {
+              if (!prev) return { title: "Interactuando...", content: chunk };
+              return { ...prev, content: prev.content + chunk };
+            });
+          }
+        }
+      );
+
+    } catch (error: any) {
+      console.error("Error continuing story:", error);
+      alert("Error continuando la historia.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const resetStory = () => {
     setGeneratedStory(null);
+    setCurrentChoices(undefined);
     // Keep selections for convenience, user can change if they want
   };
 
   const loadStory = (story: SavedStory) => {
     setGeneratedStory({ title: story.title, content: story.content });
+    setCurrentChoices(undefined); // Saved stories are finished
     setView('create');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -165,6 +209,8 @@ const App: React.FC = () => {
               <StoryReader
                 title={generatedStory.title}
                 content={generatedStory.content}
+                choices={currentChoices}
+                onChoice={handleChoice}
                 onReset={resetStory}
               />
             )}

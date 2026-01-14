@@ -83,11 +83,11 @@ export const generateStoryStream = async (
   length: StoryLength,
   language: Language,
   onChunk: (chunk: string) => void
-): Promise<{ title: string; fullContent: string }> => {
+): Promise<{ title: string; fullContent: string; choices?: string[] }> => {
   // We need to re-instantiate or reuse genAI. It's defined at module level.
 
   const charNames = selectedCharacters.map(c => c.name).join(', ');
-  const isLongStory = selectedLength.id === 'long';
+  const isLongStory = length.id === 'long';
 
   // Use compatible models for Google Generative AI SDK (User has access to 3.0 preview)
   const modelName = isLongStory ? 'gemini-3-pro-preview' : 'gemini-3-flash-preview';
@@ -115,11 +115,14 @@ export const generateStoryStream = async (
     
     INSTRUCCIÓN IMPORTANTE PARA EL FORMATO DE RESPUESTA:
     La primera línea DEBE ser el título comenzando con "TITULO: ".
-    A partir de la segunda línea, escribe el contenido de la historia.
+    Escribe la historia.
+    AL FINAL, DEBES ofrecer 2 opciones para continuar la historia en una nueva línea con el formato: "OPCIONES: [Opción A] | [Opción B]"
+    IMPORTANTE: Las opciones deben ser DIVERGENTES (ej. una de acción vs. una emocional, o un éxito vs. un error). Haz que el usuario dude.
     
     Ejemplo:
     TITULO: El gran ensayo
-    Era una tarde lluviosa en Salt Lake City...
+    Era una tarde lluviosa... y entonces Ricky preguntó.
+    OPCIONES: Ricky confiesa su secreto | Ricky sale corriendo
   `;
 
   try {
@@ -162,13 +165,69 @@ export const generateStoryStream = async (
     }
 
     // Final cleanup for return
-    const finalContent = fullText.replace(/^TITULO:.*$/m, '').trim();
+    let finalContent = fullText.replace(/^TITULO:.*$/m, '').trim();
+
+    // Extract choices if present (Format: OPTIONS: [Option 1] | [Option 2])
+    const choices: string[] = [];
+    const optionsMatch = finalContent.match(/OPCIONES: (.+)$/);
+    if (optionsMatch) {
+      // Remove options line from content
+      finalContent = finalContent.replace(optionsMatch[0], '').trim();
+      // Parse options
+      const optionsStr = optionsMatch[1];
+      optionsStr.split('|').forEach(opt => choices.push(opt.trim()));
+    }
+
     if (!title) title = "Historia de East High";
 
-    return { title, fullContent: finalContent };
+    return { title, fullContent: finalContent, choices };
 
   } catch (error) {
     console.error("Error generating story stream:", error);
+    throw error;
+  }
+};
+
+export const continueStoryStream = async (
+  previousContent: string,
+  selectedChoice: string,
+  language: Language,
+  onChunk: (chunk: string) => void
+): Promise<string> => {
+  const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY);
+  const model = genAI.getGenerativeModel({ model: 'gemini-3-flash-preview' });
+
+  const langInstruction = language === 'en'
+    ? "Write in English."
+    : "Escribe en Español.";
+
+  const prompt = `
+    ${langInstruction}
+    CONTEXTO ANTERIOR DE LA HISTORIA:
+    "${previousContent.slice(-1000)}"
+    ...
+    
+    EL USUARIO ELIGIÓ: "${selectedChoice}"
+    
+    TAREA:
+    Continúa la historia basándote en la elección del usuario. Escribe un final emocionante para este episodio.
+    No repitas el título. Escribe directamente el contenido.
+    Usa Markdown.
+  `;
+
+  try {
+    const result = await model.generateContentStream(prompt);
+    let fullNewContent = '';
+
+    for await (const chunk of result.stream) {
+      const chunkText = chunk.text();
+      fullNewContent += chunkText;
+      onChunk(chunkText);
+    }
+
+    return fullNewContent;
+  } catch (error) {
+    console.error("Error continuing story:", error);
     throw error;
   }
 };
