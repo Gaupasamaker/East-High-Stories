@@ -31,3 +31,14 @@ export interface StoryState {
   title: string | null;
   isLoading: boolean;
 }
+
+export interface SavedStory {
+  id: string;
+  title: string;
+  content: string;
+  characters: string[]; // IDs
+  genreId: string;
+  lengthId: 'short' | 'long';
+  language: Language;
+  createdAt: number; // timestamp
+}
