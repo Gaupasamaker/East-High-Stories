@@ -51,7 +51,6 @@ const App: React.FC = () => {
         const story = await generateStory(chars, genre, length, selectedLanguage);
         setGeneratedStory(story);
       }
-    } catch (error) {
     } catch (error: any) {
       console.error("Story generation error:", error);
       const errorMsg = error.message || "Error desconocido";
