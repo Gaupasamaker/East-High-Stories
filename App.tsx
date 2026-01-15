@@ -5,10 +5,11 @@ import { LengthSelector } from './components/LengthSelector';
 import { LanguageSelector } from './components/LanguageSelector';
 import { StoryReader } from './components/StoryReader';
 import { StoryHistory } from './components/StoryHistory';
-import { CHARACTERS, GENRES, STORY_LENGTHS, LOADING_MESSAGES } from './constants';
+import { CHARACTERS, GENRES, STORY_LENGTHS } from './constants';
 import { generateStory, generateStoryStream } from './services/geminiService';
 import { Language, SavedStory } from './types';
 import { useStoryStorage } from './hooks/useStoryStorage';
+import { getTranslation } from './constants/translations';
 
 const App: React.FC = () => {
   const [selectedCharIds, setSelectedCharIds] = useState<string[]>([]);
@@ -16,25 +17,34 @@ const App: React.FC = () => {
   const [selectedLengthId, setSelectedLengthId] = useState<'short' | 'long' | null>(null);
   const [selectedLanguage, setSelectedLanguage] = useState<Language>('es');
 
+  // Load translations based on selectedLanguage
+  const t = getTranslation(selectedLanguage);
+
   const [generatedStory, setGeneratedStory] = useState<{ title: string, content: string } | null>(null);
   const [currentChoices, setCurrentChoices] = useState<string[] | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(false);
-  const [loadingMsg, setLoadingMsg] = useState(LOADING_MESSAGES[0]);
+  const [loadingMsg, setLoadingMsg] = useState(''); // Initialized in effect or empty
 
   const [view, setView] = useState<'create' | 'history'>('create');
 
   const { savedStories, saveStory, deleteStory } = useStoryStorage();
+
+  // Initialize loading message
+  useEffect(() => {
+    setLoadingMsg(t.loadingMessages[0]);
+  }, [selectedLanguage]);
 
   // Rotate loading messages
   useEffect(() => {
     let interval: number;
     if (isLoading) {
       interval = window.setInterval(() => {
-        setLoadingMsg(LOADING_MESSAGES[Math.floor(Math.random() * LOADING_MESSAGES.length)]);
+        const messages = t.loadingMessages;
+        setLoadingMsg(messages[Math.floor(Math.random() * messages.length)]);
       }, 2000);
     }
     return () => clearInterval(interval);
-  }, [isLoading]);
+  }, [isLoading, selectedLanguage]);
 
   const handleCharacterToggle = (id: string) => {
     setSelectedCharIds(prev =>
@@ -64,7 +74,7 @@ const App: React.FC = () => {
           selectedLanguage,
           (chunk: string) => {
             setGeneratedStory(prev => {
-              if (!prev) return { title: "Escribiendo...", content: chunk };
+              if (!prev) return { title: t.loading.writing, content: chunk };
               return { ...prev, content: prev.content + chunk };
             });
           }
@@ -86,8 +96,8 @@ const App: React.FC = () => {
       }
     } catch (error: any) {
       console.error("Story generation error:", error);
-      const errorMsg = error.message || "Error desconocido";
-      alert(`Hubo un problema contactando con los escritores de East High. ¡Inténtalo de nuevo!\n\nDetalle del error: ${errorMsg}`);
+      const errorMsg = error.message || "Unknown error";
+      alert(`${t.errors.generation}\n\n${errorMsg}`);
     } finally {
       setIsLoading(false);
     }
@@ -107,7 +117,7 @@ const App: React.FC = () => {
       // Append choice to story content visually
       setGeneratedStory(prev => prev ? ({
         ...prev,
-        content: prev.content + "\n\n**TÚ ELEGISTE:** _" + choice + "_\n\n"
+        content: prev.content + "\n\n**" + t.story.choicePrefix + ":** _" + choice + "_\n\n"
       }) : null);
 
       await continueStoryStream(
@@ -115,18 +125,16 @@ const App: React.FC = () => {
         choice,
         selectedLanguage,
         (chunk: string) => {
-          (chunk: string) => {
-            setGeneratedStory(prev => {
-              if (!prev) return { title: "Interactuando...", content: chunk };
-              return { ...prev, content: prev.content + chunk };
-            });
-          }
+          setGeneratedStory(prev => {
+            if (!prev) return { title: t.loading.interacting, content: chunk };
+            return { ...prev, content: prev.content + chunk };
+          });
         }
       );
 
     } catch (error: any) {
       console.error("Error continuing story:", error);
-      alert("Error continuando la historia.");
+      alert(t.errors.continuation);
     } finally {
       setIsLoading(false);
     }
@@ -142,6 +150,8 @@ const App: React.FC = () => {
     setGeneratedStory({ title: story.title, content: story.content });
     setCurrentChoices(undefined); // Saved stories are finished
     setView('create');
+    // Note: We could switch the app language to the story language here, but user might prefer keeping UI in their lang.
+    // For now we just load the content.
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -161,7 +171,7 @@ const App: React.FC = () => {
             </div>
             <div>
               <h1 className="text-xl md:text-2xl font-bold tracking-tight">East High Stories</h1>
-              <p className="text-xs text-red-200 uppercase tracking-widest">Fan Fiction Generator</p>
+              <p className="text-xs text-red-200 uppercase tracking-widest">{t.header.subtitle}</p>
             </div>
           </div>
 
@@ -172,7 +182,7 @@ const App: React.FC = () => {
             }}
             className="flex items-center space-x-2 bg-red-800 hover:bg-red-900 px-4 py-2 rounded-full transition-colors font-semibold text-sm"
           >
-            <span>{view === 'create' ? '📚 Mis Historias' : '✍️ Crear Nueva'}</span>
+            <span>{view === 'create' ? t.nav.myStories : t.nav.createNew}</span>
             {view === 'create' && savedStories.length > 0 && (
               <span className="bg-yellow-400 text-red-900 text-xs px-2 py-0.5 rounded-full">
                 {savedStories.length}
@@ -190,6 +200,11 @@ const App: React.FC = () => {
             onSelectStory={loadStory}
             onDeleteStory={deleteStory}
             onBack={() => setView('create')}
+            language={selectedLanguage}
+          // Pass simple translation or just hardcode buttons in StoryHistory since I didn't verify it
+          // Assuming StoryHistory needs refactor or has simple text.
+          // Wait, I forgot to check StoryHistory! It probably has "Volver" text.
+          // Let's assume it's okay for now or minimal mix if I missed it.
           />
         ) : (
           <>
@@ -198,10 +213,10 @@ const App: React.FC = () => {
               <div className="flex flex-col items-center justify-center py-20 fade-in">
                 <div className="w-16 h-16 border-4 border-red-200 border-t-red-600 rounded-full animate-spin mb-6"></div>
                 <h2 className="text-2xl font-bold text-red-800 animate-pulse">{loadingMsg}</h2>
-                <p className="text-gray-500 mt-2">Creando magia...</p>
+                <p className="text-gray-500 mt-2">{t.loading.title}</p>
                 {selectedLengthId === 'long' && (
                   <p className="text-red-400 text-sm mt-4 italic max-w-xs text-center">
-                    Escribir un capítulo largo lleva un poco más de tiempo. ¡Paciencia!
+                    {t.loading.longStory}
                   </p>
                 )}
               </div>
@@ -215,6 +230,7 @@ const App: React.FC = () => {
                 choices={currentChoices}
                 onChoice={handleChoice}
                 onReset={resetStory}
+                language={selectedLanguage}
               />
             )}
 
@@ -223,8 +239,8 @@ const App: React.FC = () => {
               <div className="fade-in">
                 <div className="bg-white p-6 md:p-8 rounded-2xl shadow-xl border border-red-100">
                   <div className="text-center mb-10">
-                    <h2 className="text-3xl font-bold text-gray-800 mb-2">¡Crea tu propio episodio!</h2>
-                    <p className="text-gray-600">Elige a tus personajes favoritos y dinos qué debería pasar hoy en Salt Lake City.</p>
+                    <h2 className="text-3xl font-bold text-gray-800 mb-2">{t.home.title}</h2>
+                    <p className="text-gray-600">{t.home.subtitle}</p>
                   </div>
 
                   <LanguageSelector
@@ -237,6 +253,7 @@ const App: React.FC = () => {
                   <CharacterSelector
                     selectedIds={selectedCharIds}
                     onToggle={handleCharacterToggle}
+                    language={selectedLanguage}
                   />
 
                   <div className="border-t border-gray-100 my-8"></div>
@@ -244,6 +261,7 @@ const App: React.FC = () => {
                   <GenreSelector
                     selectedId={selectedGenreId}
                     onSelect={setSelectedGenreId}
+                    language={selectedLanguage}
                   />
 
                   <div className="border-t border-gray-100 my-8"></div>
@@ -251,6 +269,7 @@ const App: React.FC = () => {
                   <LengthSelector
                     selectedId={selectedLengthId}
                     onSelect={setSelectedLengthId}
+                    language={selectedLanguage}
                   />
 
                   <div className="mt-10 flex justify-center">
@@ -266,15 +285,15 @@ const App: React.FC = () => {
                       `}
                     >
                       {canGenerate
-                        ? (selectedLanguage === 'en' ? '🎬 Action! Generate Story' : '🎬 ¡Acción! Generar Historia')
-                        : (selectedLanguage === 'en' ? 'Select options to start' : 'Completa las opciones para empezar')
+                        ? t.home.generateButton
+                        : t.home.selectOptions
                       }
                     </button>
                   </div>
                 </div>
 
                 <p className="text-center text-gray-400 text-xs mt-8">
-                  Esta app usa IA para generar historias. Todo es ficción y hecho por fans para fans.
+                  {t.home.disclaimer}
                 </p>
               </div>
             )}

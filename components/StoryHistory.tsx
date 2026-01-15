@@ -1,31 +1,36 @@
 import React from 'react';
-import { SavedStory } from '../types';
+import { SavedStory, Language } from '../types';
 import { CHARACTERS } from '../constants';
+import { getTranslation } from '../constants/translations';
 
 interface StoryHistoryProps {
     stories: SavedStory[];
     onSelectStory: (story: SavedStory) => void;
     onDeleteStory: (id: string) => void;
     onBack: () => void;
+    language: Language;
 }
 
 export const StoryHistory: React.FC<StoryHistoryProps> = ({
     stories,
     onSelectStory,
     onDeleteStory,
-    onBack
+    onBack,
+    language
 }) => {
+    const t = getTranslation(language);
+
     if (stories.length === 0) {
         return (
             <div className="text-center py-20 fade-in">
                 <div className="text-6xl mb-6">📚</div>
-                <h2 className="text-2xl font-bold text-gray-800 mb-2">Tu biblioteca está vacía</h2>
-                <p className="text-gray-500 mb-8">¡Crea tu primera historia para guardarla aquí!</p>
+                <h2 className="text-2xl font-bold text-gray-800 mb-2">{t.history.emptyTitle}</h2>
+                <p className="text-gray-500 mb-8">{t.history.emptyDesc}</p>
                 <button
                     onClick={onBack}
                     className="bg-red-600 text-white px-6 py-2 rounded-full font-bold hover:bg-red-700 transition-colors"
                 >
-                    Crear Historia
+                    {t.history.createStory}
                 </button>
             </div>
         );
@@ -34,12 +39,12 @@ export const StoryHistory: React.FC<StoryHistoryProps> = ({
     return (
         <div className="fade-in">
             <div className="flex items-center justify-between mb-8">
-                <h2 className="text-3xl font-bold text-gray-800">Mis Historias ({stories.length})</h2>
+                <h2 className="text-3xl font-bold text-gray-800">{t.history.myStories} ({stories.length})</h2>
                 <button
                     onClick={onBack}
                     className="text-red-600 font-bold hover:underline"
                 >
-                    &larr; Volver
+                    &larr; {t.history.back}
                 </button>
             </div>
 
@@ -58,10 +63,10 @@ export const StoryHistory: React.FC<StoryHistoryProps> = ({
                                 <button
                                     onClick={(e) => {
                                         e.stopPropagation();
-                                        if (confirm('¿Seguro que quieres borrar esta historia?')) onDeleteStory(story.id);
+                                        if (confirm(t.history.deleteConfirm)) onDeleteStory(story.id);
                                     }}
                                     className="text-gray-400 hover:text-red-500 p-2"
-                                    title="Borrar historia"
+                                    title={t.history.deleteTooltip}
                                 >
                                     🗑️
                                 </button>
@@ -89,7 +94,7 @@ export const StoryHistory: React.FC<StoryHistoryProps> = ({
                                 </p>
 
                                 <span className="text-red-600 text-sm font-bold group-hover:underline">
-                                    Leer historia completa &rarr;
+                                    {t.history.readFull} &rarr;
                                 </span>
                             </div>
                         </div>

@@ -1,18 +1,22 @@
 import React from 'react';
 import { CHARACTERS } from '../constants';
-import { Character } from '../types';
+import { Language } from '../types';
+import { getTranslation } from '../constants/translations';
 
 interface Props {
   selectedIds: string[];
   onToggle: (id: string) => void;
+  language: Language;
 }
 
-export const CharacterSelector: React.FC<Props> = ({ selectedIds, onToggle }) => {
+export const CharacterSelector: React.FC<Props> = ({ selectedIds, onToggle, language }) => {
+  const t = getTranslation(language);
+
   return (
     <div className="mb-8">
       <h3 className="text-xl font-bold text-red-700 mb-4 flex items-center">
         <span className="bg-red-600 text-white rounded-full w-8 h-8 flex items-center justify-center mr-2 text-sm">1</span>
-        Elige a los protagonistas
+        {t.home.selectCharacters}
       </h3>
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
         {CHARACTERS.map((char) => {
@@ -23,8 +27,8 @@ export const CharacterSelector: React.FC<Props> = ({ selectedIds, onToggle }) =>
               onClick={() => onToggle(char.id)}
               className={`
                 relative p-3 rounded-xl border-2 transition-all duration-200 flex flex-col items-center justify-center text-center h-32
-                ${isSelected 
-                  ? `${char.color} shadow-md scale-105 ring-2 ring-offset-1 ring-red-400` 
+                ${isSelected
+                  ? `${char.color} shadow-md scale-105 ring-2 ring-offset-1 ring-red-400`
                   : 'bg-white border-gray-200 text-gray-500 hover:border-red-200 hover:bg-red-50'
                 }
               `}
@@ -45,7 +49,7 @@ export const CharacterSelector: React.FC<Props> = ({ selectedIds, onToggle }) =>
         })}
       </div>
       {selectedIds.length === 0 && (
-        <p className="text-sm text-red-400 mt-2 italic">* Selecciona al menos un personaje</p>
+        <p className="text-sm text-red-400 mt-2 italic">{t.home.selectAtLeastOne}</p>
       )}
     </div>
   );
